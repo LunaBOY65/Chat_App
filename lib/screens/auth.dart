@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+final _firebase = FirebaseAuth.instance;
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -14,15 +17,37 @@ class _AuthScreenState extends State<AuthScreen> {
   var _enteredEmail = '';
   var _enteredpassword = '';
 
-  void _sumbmit() {
+  void _submit() async {
     final isValid = _form.currentState!.validate();
 
-    if(isValid){
-      _form.currentState!.save();
-      print(_enteredEmail);
-      print(_enteredpassword);
+    if (!isValid) {
+      return;
     }
 
+    _form.currentState!.save();
+    try {
+      if (_isLogin) {
+        final userCredentials = await _firebase.signInWithEmailAndPassword(
+          email: _enteredEmail,
+          password: _enteredpassword,
+        );
+
+      } else {
+        final userCredentials = await _firebase.createUserWithEmailAndPassword(
+          email: _enteredEmail,
+          password: _enteredpassword,
+        );
+
+      }
+    } on FirebaseAuthException catch (error) {
+      if (error.code == 'email-already-in-use') {
+        //   ...
+      }
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message ?? 'Authentication failed.')),
+      );
+    }
   }
 
   @override
@@ -69,7 +94,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               }
                               return null;
                             },
-                            onSaved: (value){
+                            onSaved: (value) {
                               _enteredEmail = value!;
                             },
                           ),
@@ -80,19 +105,18 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                             obscureText: true,
                             validator: (value) {
-                              if (value == null ||
-                                  value.trim().length < 6) {
+                              if (value == null || value.trim().length < 6) {
                                 return 'Password must be at least 6 characters long.';
                               }
                               return null;
                             },
-                            onSaved: (value){
+                            onSaved: (value) {
                               _enteredpassword = value!;
                             },
                           ),
                           const SizedBox(height: 12),
                           ElevatedButton(
-                            onPressed: _sumbmit,
+                            onPressed: _submit,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(
                                 context,
