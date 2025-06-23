@@ -82,128 +82,172 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ตรวจสอบว่าอุปกรณ์อยู่ในแนวนอนหรือแนวตั้ง
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.primary,
       body: Center(
         child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                margin: EdgeInsets.only(
-                  top: 30,
-                  bottom: 20,
-                  left: 20,
-                  right: 20,
-                ),
-                width: 200,
-                child: Image.asset('assets/images/chat.png'),
-              ),
-              Card(
-                margin: const EdgeInsets.all(20),
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Form(
-                      key: _form,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (!_isLogin)
-                            UserImagePicker(
-                              onPickImage: (pickedImage) {
-                                _selectedImage = pickedImage;
-                              },
-                            ),
-                          TextFormField(
-                            decoration: const InputDecoration(
-                              labelText: 'Email Address',
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                            autocorrect: false,
-                            textCapitalization: TextCapitalization.none,
-                            validator: (value) {
-                              if (value == null ||
-                                  value.trim().isEmpty ||
-                                  !value.contains('@')) {
-                                return 'Please enter a valid email address.';
-                              }
-                              return null;
-                            },
-                            onSaved: (value) {
-                              _enteredEmail = value!;
-                            },
-                          ),
+          child: isLandscape
+              ? _buildLandscapeLayout(screenWidth, screenHeight)
+              : _buildPortraitLayout(screenWidth, screenHeight),
+        ),
+      ),
+    );
+  }
 
-                          if (!_isLogin)
-                            TextFormField(
-                              decoration: const InputDecoration(
-                                labelText: 'Username',
-                              ),
-                              enableSuggestions: false,
-                              validator: (value) {
-                                if (value == null ||
-                                    value.isEmpty ||
-                                    value.trim().length < 4) {
-                                  return 'Please enter at least 4 characters.';
-                                }
-                                return null;
-                              },
-                              onSaved: (value) {
-                                _enteredUsername = value!;
-                              },
-                            ),
-
-                          TextFormField(
-                            decoration: const InputDecoration(
-                              labelText: 'Password',
-                            ),
-                            obscureText: true,
-                            validator: (value) {
-                              if (value == null || value.trim().length < 6) {
-                                return 'Password must be at least 6 characters long.';
-                              }
-                              return null;
-                            },
-                            onSaved: (value) {
-                              _enteredpassword = value!;
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          if (_isAuthenticating)
-                            const CircularProgressIndicator(),
-                          if (!_isAuthenticating)
-                            ElevatedButton(
-                              onPressed: _submit,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.primaryContainer,
-                              ),
-                              child: Text(_isLogin ? 'Login' : 'Sign Up'),
-                            ),
-                          if (!_isAuthenticating)
-                            TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  _isLogin = !_isLogin;
-                                });
-                              },
-                              child: Text(
-                                _isLogin
-                                    ? 'Create an account'
-                                    : 'I already have an account. Login.',
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+  // Layout สำหรับแนวตั้ง (เดิม)
+  Widget _buildPortraitLayout(double screenWidth, double screenHeight) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(
+            top: 30,
+            bottom: 20,
+            left: 20,
+            right: 20,
+          ),
+          width: 200,
+          child: Image.asset('assets/images/chat.png'),
+        ),
+        Card(
+          margin: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: _buildForm(),
+            ),
           ),
         ),
+      ],
+    );
+  }
+
+  // Layout สำหรับแนวนอน
+  Widget _buildLandscapeLayout(double screenWidth, double screenHeight) {
+    return Row(
+      children: [
+        // ส่วนซ้าย - รูปภาพ
+        Expanded(
+          flex: 1,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 150, // ลดขนาดรูปในแนวนอน
+                  child: Image.asset('assets/images/chat.png'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // ส่วนขวา - ฟอร์ม
+        Expanded(
+          flex: 1,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Card(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: _buildForm(),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ส่วนของฟอร์มที่ใช้ร่วมกัน
+  Widget _buildForm() {
+    return Form(
+      key: _form,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!_isLogin)
+            UserImagePicker(
+              onPickImage: (pickedImage) {
+                _selectedImage = pickedImage;
+              },
+            ),
+          TextFormField(
+            decoration: const InputDecoration(labelText: 'Email Address'),
+            keyboardType: TextInputType.emailAddress,
+            autocorrect: false,
+            textCapitalization: TextCapitalization.none,
+            validator: (value) {
+              if (value == null ||
+                  value.trim().isEmpty ||
+                  !value.contains('@')) {
+                return 'Please enter a valid email address.';
+              }
+              return null;
+            },
+            onSaved: (value) {
+              _enteredEmail = value!;
+            },
+          ),
+          if (!_isLogin)
+            TextFormField(
+              decoration: const InputDecoration(labelText: 'Username'),
+              enableSuggestions: false,
+              validator: (value) {
+                if (value == null || value.isEmpty || value.trim().length < 4) {
+                  return 'Please enter at least 4 characters.';
+                }
+                return null;
+              },
+              onSaved: (value) {
+                _enteredUsername = value!;
+              },
+            ),
+          TextFormField(
+            decoration: const InputDecoration(labelText: 'Password'),
+            obscureText: true,
+            validator: (value) {
+              if (value == null || value.trim().length < 6) {
+                return 'Password must be at least 6 characters long.';
+              }
+              return null;
+            },
+            onSaved: (value) {
+              _enteredpassword = value!;
+            },
+          ),
+          const SizedBox(height: 12),
+          if (_isAuthenticating) const CircularProgressIndicator(),
+          if (!_isAuthenticating)
+            ElevatedButton(
+              onPressed: _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              ),
+              child: Text(_isLogin ? 'Login' : 'Sign Up'),
+            ),
+          if (!_isAuthenticating)
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _isLogin = !_isLogin;
+                });
+              },
+              child: Text(
+                _isLogin
+                    ? 'Create an account'
+                    : 'I already have an account. Login.',
+              ),
+            ),
+        ],
       ),
     );
   }
